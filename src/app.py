@@ -627,15 +627,28 @@ class RichTextEmailEditor(QWidget):
 
 def setup_logging():
     """Set up logging configuration"""
-    log_dir = Path.cwd() / 'logs'
-    log_dir.mkdir(exist_ok=True)
-    
-    log_file = log_dir / 'app.log'
-    logging.basicConfig(
-        filename=str(log_file),
-        level=logging.DEBUG,
-        format='%(asctime)s - %(levelname)s - %(message)s'
-    )
+    # Use environment variable if available, otherwise use default
+    if 'LOGS_DIR' in os.environ:
+        log_dir = Path(os.environ['LOGS_DIR'])
+    else:
+        log_dir = Path.cwd() / 'logs'
+        
+    try:
+        log_dir.mkdir(exist_ok=True)
+        
+        log_file = log_dir / 'app.log'
+        logging.basicConfig(
+            filename=str(log_file),
+            level=logging.DEBUG,
+            format='%(asctime)s - %(levelname)s - %(message)s'
+        )
+    except PermissionError:
+        # Fall back to console logging if file access is denied
+        logging.basicConfig(
+            level=logging.DEBUG,
+            format='%(asctime)s - %(levelname)s - %(message)s'
+        )
+        logging.warning(f"Could not write to log file in {log_dir}, falling back to console logging")
     
     # Also log to console for debugging
     console_handler = logging.StreamHandler()

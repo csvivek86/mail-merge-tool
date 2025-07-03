@@ -1,14 +1,58 @@
 import json
+import os
 from pathlib import Path
 import logging
 
+# Create a module-level logger
+logger = logging.getLogger(__name__)
+
 class AppSettings:
     def __init__(self):
-        self.config_dir = Path.home() / ".nsna-mail-merge"
-        self.config_dir.mkdir(exist_ok=True)
+        # Use environment variables if available
+        if 'CONFIG_DIR' in os.environ:
+            self.config_dir = Path(os.environ['CONFIG_DIR'])
+        else:
+            self.config_dir = Path.home() / ".nsna-mail-merge"
+            
+        try:
+            self.config_dir.mkdir(exist_ok=True)
+        except PermissionError:
+            logger.warning(f"Could not access config directory {self.config_dir}, using temporary directory")
+            self.config_dir = Path(os.path.join(os.path.expanduser("~"), "NSNA_Mail_Merge_Data/config"))
+            os.makedirs(self.config_dir, exist_ok=True)
+            
         self.settings_file = self.config_dir / "settings.json"
-        self.default_receipts_dir = Path.home() / "Documents" / "NSNA Receipts"
-        self.default_template = Path(__file__).parent.parent.parent / "NSNA Atlanta Letterhead Updated.pdf"
+        
+        # Use environment variables for receipts if available
+        if 'RECEIPTS_DIR' in os.environ:
+            self.default_receipts_dir = Path(os.environ['RECEIPTS_DIR'])
+        else:
+            self.default_receipts_dir = Path.home() / "Documents" / "NSNA Receipts"
+            
+        # Look for template in multiple locations
+        template_paths = []
+        
+        # First check if there's a template path in environment variable
+        if 'PDF_TEMPLATE' in os.environ:
+            template_paths.append(Path(os.environ['PDF_TEMPLATE']))
+        
+        # Add other possible template locations
+        template_paths.extend([
+            Path(__file__).parent.parent.parent / "NSNA Atlanta Letterhead Updated.pdf",
+            Path(os.environ.get('DATA_DIR', '.')) / "NSNA Atlanta Letterhead Updated.pdf",
+            Path.home() / "NSNA_Mail_Merge_Data" / "data" / "NSNA Atlanta Letterhead Updated.pdf",
+            Path.home() / "NSNA_Mail_Merge_Data" / "NSNA Atlanta Letterhead Updated.pdf"
+        ])
+        
+        # Try to find the first template that exists
+        existing_template = next((p for p in template_paths if p.exists()), None)
+        
+        if existing_template:
+            self.default_template = existing_template
+            logger.info(f"Using PDF template: {self.default_template}")
+        else:
+            logger.warning("No PDF template found in any of the expected locations")
+            self.default_template = None
         self._load_settings()
 
     def _load_settings(self):

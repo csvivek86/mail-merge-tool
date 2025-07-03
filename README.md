@@ -11,6 +11,8 @@ Enhanced mail merge application for NSNA Atlanta with modern UI and rich text te
 - **Excel Integration**: Import donor data and track email status
 - **PDF Generation**: Generate personalized receipts with attachments
 - **Modern UI**: Clean, tabbed interface with color-coded buttons and status indicators
+- **OAuth Authentication**: Secure Google OAuth 2.0 support for SMTP authentication
+- **Dynamic User OAuth**: Each user can send emails using their own Google account
 
 ## Installation
 
@@ -189,7 +191,7 @@ This project is open-source and available for use and modification.
 ```bash
 python -m venv venv
 venv\Scripts\activate
-pip install -r [requirements.txt](http://_vscodecontentref_/5)
+pip install -r requirements.txt
 ```
 ## Building the Application
 
@@ -220,3 +222,69 @@ pip install -r requirements.txt
 # Build the application
 python build.py
 ```
+
+## Google OAuth 2.0 Setup
+
+The application supports two OAuth authentication methods:
+
+### 1. Dynamic User OAuth (Recommended)
+
+With Dynamic User OAuth, each person using the application can authenticate with their own Google account. This allows emails to be sent from the user's own email address, which provides better email deliverability and tracking.
+
+#### Setting up Dynamic User OAuth:
+
+1. **Create a Google Cloud Project**:
+   - Go to [Google Cloud Console](https://console.cloud.google.com/)
+   - Create a new project
+
+2. **Enable the Gmail API**:
+   - In your project, go to "APIs & Services" > "Library"
+   - Search for "Gmail API" and enable it
+
+3. **Create OAuth Credentials**:
+   - Go to "APIs & Services" > "Credentials"
+   - Click "Create Credentials" > "OAuth client ID"
+   - Select "Desktop App" as the application type
+   - Name your client and click "Create"
+   - Download the JSON file (this is your credentials file)
+
+4. **Run the OAuth Setup Tool**:
+   ```bash
+   python setup_oauth.py
+   ```
+   - Follow the prompts and provide the path to your downloaded credentials.json
+   - The tool will extract and store the client ID and client secret in settings.py
+
+5. **Using Dynamic User OAuth**:
+   - Ensure that both `USE_OAUTH = True` and `DYNAMIC_USER_OAUTH = True` in `src/config/settings.py`
+   - When users enter their email in the "From Email" field and send an email, they'll be prompted to authenticate with Google
+   - Each user's authentication token is securely stored for future use
+   - Users will only need to authenticate once per email address
+
+### 2. Static OAuth (Alternative)
+
+With Static OAuth, the application uses a single OAuth token for all email sending, regardless of the "From Email" field.
+
+#### Setting up Static OAuth:
+
+1. Follow steps 1-4 from Dynamic User OAuth setup above
+   
+2. After completing the OAuth setup, set:
+   - `USE_OAUTH = True`
+   - `DYNAMIC_USER_OAUTH = False` in `src/config/settings.py`
+
+3. The application will use the refresh token stored in settings.py for all email sending
+
+### 3. App Password Authentication (Legacy Method)
+
+If you prefer to use app passwords instead of OAuth:
+
+1. Set `USE_OAUTH = False` in `src/config/settings.py`
+2. Update `EMAIL_SETTINGS['smtp_password']` with your app password
+
+## Security Notes
+
+- With Dynamic User OAuth, the application never sees or stores user passwords
+- Each user's OAuth token is stored in a separate file in the `src/user_tokens` directory
+- OAuth tokens can be revoked at any time through the user's Google account settings
+- The application requires the "https://mail.google.com/" scope to send emails on behalf of users
