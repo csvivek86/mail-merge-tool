@@ -1,28 +1,52 @@
 import json
 import os
+import sys
 from pathlib import Path
 import logging
 
 # Create a module-level logger
 logger = logging.getLogger(__name__)
 
+def get_user_config_dir() -> Path:
+    """
+    Get the user-specific configuration directory for the application.
+    This ensures we can write files even when packaged as an app bundle.
+    """
+    if sys.platform == 'darwin':
+        # Use macOS application support directory
+        base_dir = Path.home() / "Library" / "Application Support" / "NSNA Mail Merge"
+    else:
+        # Use a hidden directory in user's home for other platforms
+        base_dir = Path.home() / ".nsna-mail-merge"
+
+    # Create specific subdirectories
+    config_dir = base_dir / "config"
+    data_dir = base_dir / "data"
+    templates_dir = base_dir / "templates"
+    
+    # Create all directories
+    for directory in [config_dir, data_dir, templates_dir]:
+        try:
+            directory.mkdir(parents=True, exist_ok=True)
+        except Exception as e:
+            logger.error(f"Failed to create directory {directory}: {e}")
+            # Fall back to temporary directory if needed
+            directory = Path(os.path.expanduser("~")) / "NSNA_Mail_Merge_Data" / directory.name
+            directory.mkdir(parents=True, exist_ok=True)
+    
+    # Set environment variables for other parts of the application
+    os.environ['CONFIG_DIR'] = str(config_dir)
+    os.environ['DATA_DIR'] = str(data_dir)
+    os.environ['TEMPLATES_DIR'] = str(templates_dir)
+    
+    return config_dir
+
 class AppSettings:
     def __init__(self):
-        # Use environment variables if available
-        if 'CONFIG_DIR' in os.environ:
-            self.config_dir = Path(os.environ['CONFIG_DIR'])
-        else:
-            self.config_dir = Path.home() / ".nsna-mail-merge"
-            
-        try:
-            self.config_dir.mkdir(exist_ok=True)
-        except PermissionError:
-            logger.warning(f"Could not access config directory {self.config_dir}, using temporary directory")
-            self.config_dir = Path(os.path.join(os.path.expanduser("~"), "NSNA_Mail_Merge_Data/config"))
-            os.makedirs(self.config_dir, exist_ok=True)
-            
+        # Get the user configuration directory
+        self.config_dir = get_user_config_dir()
         self.settings_file = self.config_dir / "settings.json"
-        
+            
         # Use environment variables for receipts if available
         if 'RECEIPTS_DIR' in os.environ:
             self.default_receipts_dir = Path(os.environ['RECEIPTS_DIR'])
@@ -38,10 +62,9 @@ class AppSettings:
         
         # Add other possible template locations
         template_paths.extend([
-            Path(__file__).parent.parent.parent / "NSNA Atlanta Letterhead Updated.pdf",
-            Path(os.environ.get('DATA_DIR', '.')) / "NSNA Atlanta Letterhead Updated.pdf",
+            Path(os.environ.get('DATA_DIR')) / "NSNA Atlanta Letterhead Updated.pdf",
             Path.home() / "NSNA_Mail_Merge_Data" / "data" / "NSNA Atlanta Letterhead Updated.pdf",
-            Path.home() / "NSNA_Mail_Merge_Data" / "NSNA Atlanta Letterhead Updated.pdf"
+            Path(__file__).parent.parent.parent / "NSNA Atlanta Letterhead Updated.pdf",
         ])
         
         # Try to find the first template that exists
@@ -50,6 +73,16 @@ class AppSettings:
         if existing_template:
             self.default_template = existing_template
             logger.info(f"Using PDF template: {self.default_template}")
+            
+            # Copy template to user data directory if it's not already there
+            user_template = Path(os.environ.get('DATA_DIR')) / "NSNA Atlanta Letterhead Updated.pdf"
+            if not user_template.exists():
+                try:
+                    import shutil
+                    shutil.copy2(existing_template, user_template)
+                    logger.info(f"Copied template to user data directory: {user_template}")
+                except Exception as e:
+                    logger.warning(f"Failed to copy template to user directory: {e}")
         else:
             logger.warning("No PDF template found in any of the expected locations")
             self.default_template = None
