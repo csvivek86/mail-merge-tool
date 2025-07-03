@@ -1,0 +1,25 @@
+{
+  "greeting": "Dear",
+  "thank_you_lines": [
+    "On behalf of Nagarathar Sangam of North America, thank you for your recent",
+    "donation to our organization."
+  ],
+  "receipt_statement": "This letter will serve as a tax receipt for your contribution listed below.",
+  "donation_year": "2025",
+  "disclaimer": "No goods or services were provided in exchange for your contribution.",
+  "org_info": [
+    "Nagarathar Sangam of North America is a registered Section 501(c)(3) non-",
+    "profit organization (EIN #: 22-3974176). For questions regarding this",
+    "acknowledgment letter, please contact us at treasurer@achi.org."
+  ],
+  "closing_lines": [
+    "We truly appreciate your donation and look forward to your continued support",
+    "of our mission."
+  ],
+  "signature": [
+    "Sincerely,",
+    "",
+    "Treasurer, NSNA",
+    "(2025-2026 term)"
+  ]
+}

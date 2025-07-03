@@ -1,0 +1,24 @@
+# Build directories
+build/
+dist/
+
+# Python cache
+__pycache__/
+*.pyc
+
+# Virtual environment
+venv/
+
+# Logs
+logs/
+*.log
+
+# PyInstaller
+*.spec
+
+# Icon source files
+src/assets/icon.iconset/
+
+# Debug files
+crash.log
+error.log

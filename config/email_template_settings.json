@@ -1,0 +1,17 @@
+{
+  "subject": "NSNA Tax Receipt",
+  "greeting": "Dear",
+  "body": [
+    "Thank you very much for your generosity in donating to NSNA. Please find attached the tax receipt for your donation.",
+    "",
+    "Please note that you may be receiving separate tax acknowledgement letters if you have made multiple contributions to NSNA in 2025.",
+    "",
+    "Please do not hesitate to contact me if you have any questions on the attached document."
+  ],
+  "signature": [
+    "Regards,",
+    "",
+    "Nagarathar Sangam of North America Treasurer",
+    "Email: nsnatreasurer@achi.org"
+  ]
+}

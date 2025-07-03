@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NSNA Donation Receipt</title>
+</head>
+<body>
+    <h1>Dear {{ first_name }} {{ last_name }},</h1>
+    
+    <p>Thank you for your generous donation to NSNA. Please find your donation receipt attached.</p>
+    
+    <p>Donation Details:</p>
+    <ul>
+        <li>Amount: ${{ donation_amount }}</li>
+        {% if value_of_item > 0 %}
+        <li>Value of Items: ${{ value_of_item }}</li>
+        {% endif %}
+        <li>Region: {{ region }}</li>
+    </ul>
+
+    <p>Best regards,<br>NSNA Treasurer</p>
+</body>
+</html>
