@@ -2,11 +2,25 @@ EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
 # Default email is used only if no "From Email" is provided in the app
 DEFAULT_EMAIL = 'webcommunications@achi.org'  
-# OAuth 2.0 settings - you will need to obtain these from Google Cloud Console
+
+# OAuth 2.0 settings - read from Streamlit secrets
 # These are application-level credentials for your Google Cloud project
 # Required for dynamic user-specific OAuth
-GOOGLE_CLIENT_ID = '707888835132-2lknrcd62uifc978ukvmk1adqa7p5nnj.apps.googleusercontent.com'  # Fill this with your OAuth client ID (REQUIRED for OAuth)
-GOOGLE_CLIENT_SECRET = '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'  # Fill this with your OAuth client secret (REQUIRED for OAuth)
+def get_google_credentials():
+    """Get Google OAuth credentials from Streamlit secrets with fallback"""
+    try:
+        import streamlit as st
+        # Try to get from Streamlit secrets first (for cloud deployment)
+        client_id = st.secrets["email"]["GOOGLE_CLIENT_ID"]
+        client_secret = st.secrets["email"]["GOOGLE_CLIENT_SECRET"]
+        return client_id, client_secret
+    except (KeyError, AttributeError, ImportError):
+        # Fallback for local development or when secrets aren't available
+        return ('707888835132-2lknrcd62uifc978ukvmk1adqa7p5nnj.apps.googleusercontent.com', 
+                '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')
+
+# Get credentials
+GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET = get_google_credentials()
 # User-specific tokens will be stored in a separate file per user
 SUBJECT = 'NSNA Donation Receipt'
 TEMPLATE_PATH = 'src/templates/letterhead_template.pdf'

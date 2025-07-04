@@ -22,3 +22,8 @@ src/assets/icon.iconset/
 # Debug files
 crash.log
 error.log
+
+# Secrets and sensitive configuration
+.streamlit/secrets.toml
+*.env
+.env*

@@ -48,12 +48,23 @@ try:
         from utils.template_persistence import TemplatePersistence
         CLOUD_DEPLOYMENT = False
     
-    from utils.rich_text_editor import (
-        create_rich_text_editor, 
-        create_template_formatting_options,
-        create_email_template_presets,
-        apply_formatting_to_html
-    )
+    try:
+        from utils.rich_text_editor import (
+            create_rich_text_editor, 
+            create_template_formatting_options,
+            create_email_template_presets,
+            apply_formatting_to_html
+        )
+    except ImportError:
+        # Rich text editor functions not available
+        def create_rich_text_editor(*args, **kwargs):
+            return ""
+        def create_template_formatting_options(*args, **kwargs):
+            return ""
+        def create_email_template_presets(*args, **kwargs):
+            return {}
+        def apply_formatting_to_html(*args, **kwargs):
+            return ""
     from config.settings import EMAIL_SETTINGS, DEFAULT_EMAIL, USE_OAUTH, DYNAMIC_USER_OAUTH
     from config.email_template_settings import EmailTemplateSettings
     from config.template_settings import TemplateSettings

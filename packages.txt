@@ -1,0 +1,2 @@
+# System packages for Streamlit Cloud
+# These are needed for PDF processing and other operations
