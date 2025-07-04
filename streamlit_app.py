@@ -281,8 +281,7 @@ def email_content_tab():
         email_content = st_quill(
             value=template_content,
             placeholder="Type your email template here...",
-            key="email_template_quill",
-            height=300
+            key="email_template_quill"
         )
         
         # Variable insertion helper
@@ -296,7 +295,7 @@ def email_content_tab():
             }
             
             # Save template button
-            if st.button("💾 Save Template"):
+            if st.button("💾 Save Template", key="save_email_template"):
                 save_email_template()
     else:
         st.info("Complete settings above first")
@@ -350,7 +349,7 @@ def pdf_content_tab():
             failed = len(sent_df[sent_df['status'] == 'Failed'])
             st.metric("Failed", failed)
         with col4:
-            if st.button("🗑️ Clear"):
+            if st.button("🗑️ Clear", key="clear_results"):
                 st.session_state.sent_emails = []
                 st.rerun()
     
@@ -405,8 +404,7 @@ NSNA Treasurer"""
         pdf_content = st_quill(
             value=default_pdf_content,
             placeholder="Create your PDF receipt content here...",
-            key="pdf_content_quill",
-            height=250
+            key="pdf_content_quill"
         )
         
         # Variable insertion helper
@@ -421,11 +419,11 @@ NSNA Treasurer"""
             # Save and sample buttons at bottom
             col1, col2 = st.columns(2)
             with col1:
-                if st.button("💾 Save Template"):
+                if st.button("💾 Save Template", key="save_pdf_template"):
                     save_pdf_template()
             
             with col2:
-                if st.button("📄 Download Sample PDF"):
+                if st.button("📄 Download Sample PDF", key="download_sample_pdf"):
                     generate_sample_pdf(pdf_content, letterhead_path)
     else:
         st.warning("NSNA letterhead template not found")
