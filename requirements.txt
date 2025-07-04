@@ -1,11 +1,19 @@
 pandas
-PyQt6==6.5.2
 reportlab==4.0.4
 PyPDF2==3.0.1
 openpyxl==3.1.2
-pyinstaller>=5.13.0
 Pillow>=10.0.0
 weasyprint>=60.0
 google-auth>=2.23.0
 google-auth-oauthlib>=1.0.0
 google-auth-httplib2>=0.1.0
+fpdf2>=2.7.0
+jinja2>=3.1.0
+python-docx>=0.8.11
+beautifulsoup4>=4.12.0
+html5lib>=1.1
+streamlit>=1.28.0
+streamlit-authenticator>=0.2.3
+streamlit-ace>=0.1.1
+streamlit-quill>=0.0.4
+# ironpdf>=2024.3.0  # Commented out due to .NET runtime compatibility issues

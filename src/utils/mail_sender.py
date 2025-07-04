@@ -130,9 +130,45 @@ def send_email(from_email, to_email, subject, html_content, attachment_path=None
             logging.warning(f"Attachment path provided but file not found: {attachment_path}")
         
         # Send email - use different auth methods depending on settings
-        with smtplib.SMTP(smtp_settings['smtp_server'], smtp_settings['smtp_port']) as server:
-            server.starttls()
-            
+        smtp_timeout = 30  # 30 second timeout
+        max_retries = 3
+        retry_delay = 5  # seconds
+        
+        for attempt in range(max_retries):
+            try:
+                logging.info(f"Attempting SMTP connection (attempt {attempt + 1}/{max_retries})")
+                
+                # Create SMTP connection with timeout
+                server = smtplib.SMTP(smtp_settings['smtp_server'], smtp_settings['smtp_port'], timeout=smtp_timeout)
+                server.set_debuglevel(1 if logging.getLogger().level == logging.DEBUG else 0)
+                
+                # Start TLS encryption
+                logging.info("Starting TLS encryption...")
+                server.starttls()
+                break  # Connection successful
+                
+            except (smtplib.SMTPConnectError, OSError, TimeoutError) as conn_error:
+                logging.warning(f"SMTP connection attempt {attempt + 1} failed: {str(conn_error)}")
+                
+                if attempt < max_retries - 1:  # Not the last attempt
+                    logging.info(f"Retrying in {retry_delay} seconds...")
+                    import time
+                    time.sleep(retry_delay)
+                else:
+                    # Last attempt failed
+                    error_msg = f"Failed to connect to {smtp_settings['smtp_server']}:{smtp_settings['smtp_port']} after {max_retries} attempts.\n\n"
+                    
+                    if "10060" in str(conn_error) or "timeout" in str(conn_error).lower():
+                        error_msg += "This appears to be a network timeout issue. Possible solutions:\n"
+                        error_msg += "• Check your internet connection\n"
+                        error_msg += "• Verify firewall settings (allow port 587)\n"
+                        error_msg += "• Contact your ISP if they block SMTP\n"
+                        error_msg += "• Try using a VPN if on a corporate network\n"
+                        error_msg += "• Check if antivirus is blocking the connection"
+                    
+                    raise ConnectionError(error_msg) from conn_error
+        
+        try:
             # Determine which email address to use for SMTP authentication
             auth_email = from_email if from_email else smtp_settings['smtp_user_name']
             
@@ -212,6 +248,16 @@ def send_email(from_email, to_email, subject, html_content, attachment_path=None
                 server.login(smtp_settings['smtp_user_name'], smtp_settings['smtp_password'])
                 
             server.send_message(msg)
+            
+        except Exception as e:
+            logging.error(f"Failed to send email: {str(e)}")
+            raise
+        finally:
+            # Ensure server connection is closed
+            try:
+                server.quit()
+            except:
+                pass
             
         logging.info(f"{'Test email' if is_test else 'Email'} sent successfully to {actual_recipient} using {'OAuth' if use_oauth else 'password'} authentication")
         return True
@@ -310,3 +356,45 @@ def send_email_with_multiple_attachments(from_email, to_email, subject, html_con
     except Exception as e:
         logging.error(f"Failed to send email with multiple attachments: {str(e)}")
         return False
+
+def send_email_with_diagnostics(from_email, to_email, subject, html_content, attachment_path=None, smtp_settings=None, is_test=False):
+    """
+    Send email with enhanced error handling and network diagnostics
+    
+    This wrapper function provides better error messages and diagnostic information
+    when email sending fails, particularly for network-related issues.
+    """
+    try:
+        return send_email(from_email, to_email, subject, html_content, attachment_path, smtp_settings, is_test)
+    
+    except ConnectionError as e:
+        # Handle connection-specific errors with detailed diagnostics
+        logging.error(f"Connection error sending email: {str(e)}")
+        
+        # Run quick diagnostics
+        from utils.network_diagnostics import test_network_connectivity, show_connection_help
+        connectivity = test_network_connectivity()
+        
+        error_details = str(e)
+        if not connectivity.get('internet'):
+            error_details += "\n\nNetwork diagnostics indicate no internet connection."
+        elif not connectivity.get('gmail_smtp'):
+            error_details += "\n\nNetwork diagnostics indicate Gmail SMTP is not reachable."
+        
+        error_details += "\n\n" + show_connection_help()
+        
+        # Re-raise with enhanced error message
+        raise ConnectionError(error_details) from e
+    
+    except Exception as e:
+        # Handle other email sending errors
+        error_msg = str(e)
+        
+        # Check if it's a timeout-related error
+        if "10060" in error_msg or "timeout" in error_msg.lower() or "timed out" in error_msg.lower():
+            from utils.network_diagnostics import show_connection_help
+            error_msg += "\n\nThis appears to be a network timeout issue."
+            error_msg += show_connection_help()
+        
+        logging.error(f"Email sending failed: {error_msg}")
+        raise Exception(error_msg) from e

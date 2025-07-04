@@ -13,7 +13,6 @@ from pathlib import Path
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.oauth2.credentials import Credentials
 from google.auth.transport.requests import Request
-from PyQt6.QtWidgets import QMessageBox
 
 # Gmail API scopes required for SMTP access
 SCOPES = ['https://mail.google.com/']
@@ -84,21 +83,7 @@ def get_user_credentials(email, client_id, client_secret):
                     }
                 }
                 
-                # Show message to user - non-blocking dialog
-                from PyQt6.QtCore import QTimer
-                msg_box = QMessageBox()
-                msg_box.setWindowTitle("Google Authentication Required")
-                msg_box.setText(f"A browser window has opened for you to authorize sending emails as {email}.\n\n"
-                               f"Please complete the authentication in your browser.\n\n"
-                               f"This message will close automatically when authentication is complete.")
-                msg_box.setStandardButtons(QMessageBox.StandardButton.Ok)
-                
-                # Set up a timer to close this dialog after 3 seconds
-                # This ensures it doesn't block the flow while still informing the user
-                QTimer.singleShot(3000, msg_box.accept)
-                
-                # Show the message box non-modally
-                msg_box.show()
+                logging.info(f"Starting OAuth flow for {email}")
                 
                 flow = InstalledAppFlow.from_client_config(
                     client_config, SCOPES)
@@ -110,26 +95,10 @@ def get_user_credentials(email, client_id, client_secret):
                     with open(token_path, 'w') as token:
                         token.write(creds.to_json())
                         
-                # Non-blocking success message
-                success_msg = QMessageBox()
-                success_msg.setWindowTitle("Authentication Successful")
-                success_msg.setText(f"Successfully authenticated {email}.\n\n"
-                                  f"You can now send emails using this account.")
-                success_msg.setStandardButtons(QMessageBox.StandardButton.Ok)
-                
-                # Auto-close after 2 seconds
-                QTimer.singleShot(2000, success_msg.accept)
-                success_msg.show()
+                logging.info(f"Successfully authenticated {email}")
                         
             except Exception as e:
                 logging.error(f"Authentication error: {e}")
-                QMessageBox.critical(
-                    None, 
-                    "Authentication Failed", 
-                    f"Failed to authenticate {email}.\n\n"
-                    f"Error: {str(e)}\n\n"
-                    f"Please try again or use a different email address."
-                )
                 return None
                 
     return creds
