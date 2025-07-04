@@ -50,7 +50,6 @@ try:
         create_rich_text_editor, 
         create_template_formatting_options,
         create_email_template_presets,
-        create_variable_helper,
         apply_formatting_to_html
     )
     from config.settings import EMAIL_SETTINGS, DEFAULT_EMAIL, USE_OAUTH, DYNAMIC_USER_OAUTH
@@ -163,18 +162,18 @@ def main():
     
     # Simplified 2-tab navigation
     tab1, tab2 = st.tabs([
-        "📊 Email Content", 
-        "� PDF Content"
+        "📊 Data & Settings", 
+        "📧 Templates & Sending"
     ])
     
     with tab1:
-        email_content_tab()
+        data_settings_tab()
     
     with tab2:
-        pdf_content_tab()
+        templates_sending_tab()
 
-def email_content_tab():
-    """Email Content Tab: Upload data, email settings, and email template editor"""
+def data_settings_tab():
+    """Data & Settings Tab: Upload data and email settings only"""
     
     # Data Upload Section
     st.header("📊 Upload Data")
@@ -249,14 +248,94 @@ def email_content_tab():
             'from_email': from_email,
             'subject': subject
         }
+
+
+def templates_sending_tab():
+    """Templates & Sending Tab: Email template editor, PDF template editor, send buttons, and results"""
     
-    # Email Template Editor
-    st.header("✏️ Email Template")
+    # Check if setup is complete (simplified check)
+    if (st.session_state.excel_data is None or 
+        not hasattr(st.session_state, 'email_settings') or
+        st.session_state.email_settings is None):
+        st.info("Complete Data & Settings tab first")
+        return
     
-    if data_uploaded and email_settings_valid:
-        # Template presets
-        presets = {
-            "Donation Receipt": """<p>Dear {First Name} {Last Name},</p>
+    # Send Buttons and Results at the top (not in subtab)
+    st.header("📧 Send Emails")
+    
+    # Check if we have email template before showing send buttons
+    if hasattr(st.session_state, 'current_email_template'):
+        df = st.session_state.excel_data
+        template = st.session_state.current_email_template
+        
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            if st.button("🧪 Test Email", type="secondary"):
+                execute_mail_merge(df.head(1), template, "Test Mode", 1)
+        
+        with col2:
+            if st.button("🚀 Send All Emails", type="primary"):
+                # Add confirmation
+                if st.session_state.get('confirm_send_all', False):
+                    execute_mail_merge(df, template, "Live Mode", 3)
+                    st.session_state.confirm_send_all = False
+                else:
+                    st.session_state.confirm_send_all = True
+                    st.warning("Click again to confirm")
+                    st.rerun()
+        
+        # Results section (simplified)
+        if st.session_state.sent_emails:
+            sent_df = pd.DataFrame(st.session_state.sent_emails)
+            
+            # Simple metrics in one row
+            col1, col2, col3, col4 = st.columns(4)
+            with col1:
+                st.metric("Total", len(sent_df))
+            with col2:
+                successful = len(sent_df[sent_df['status'] == 'Success'])
+                st.metric("Success", successful)
+            with col3:
+                failed = len(sent_df[sent_df['status'] == 'Failed'])
+                st.metric("Failed", failed)
+            with col4:
+                if st.button("🗑️ Clear", key="clear_results"):
+                    st.session_state.sent_emails = []
+                    st.rerun()
+    else:
+        st.info("Create an email template first using the subtabs below")
+    
+    # Template Editor Subtabs
+    st.header("📝 Template Editors")
+    
+    subtab1, subtab2 = st.tabs([
+        "✏️ Email Template", 
+        "📄 PDF Template"
+    ])
+    
+    with subtab1:
+        email_template_subtab()
+    
+    with subtab2:
+        pdf_template_subtab()
+
+
+def email_template_subtab():
+    """Email Template subtab content"""
+    
+    # Check if email settings exist
+    if not hasattr(st.session_state, 'email_settings') or st.session_state.email_settings is None:
+        st.warning("Please complete the Data & Settings tab first to set your email configuration.")
+        return
+    
+    # Get email settings from session state
+    from_email = st.session_state.email_settings.get('from_email', '')
+    subject = st.session_state.email_settings.get('subject', '')
+    
+    # Template presets
+    presets = {
+        "Donation Receipt": """<p>Dear {First Name} {Last Name},</p>
 <p>Thank you for your generous donation to the Nagarathar Sangam of North America.</p>
 <p><strong>Donation Details:</strong><br>
 • Amount: ${Amount}<br>
@@ -264,97 +343,40 @@ def email_content_tab():
 <p>Please find your official receipt attached as a PDF for your tax records.</p>
 <p>Best regards,<br>
 <strong>NSNA Treasurer</strong></p>""",
-            
-            "Custom": ""
+        
+        "Custom": ""
+    }
+    
+    selected_preset = st.selectbox("Template:", list(presets.keys()))
+    
+    # Load saved template if available
+    saved_email = getattr(st.session_state, 'saved_email_template', None)
+    if saved_email:
+        template_content = saved_email.get('content', presets[selected_preset])
+    else:
+        template_content = presets[selected_preset]
+    
+    # Email template editor
+    email_content = st_quill(
+        value=template_content,
+        placeholder="Type your email template here...",
+        key="email_template_quill"
+    )
+    
+    if email_content and email_content.strip():
+        st.session_state.current_email_template = {
+            'content': email_content,
+            'from_email': from_email,
+            'subject': subject
         }
         
-        selected_preset = st.selectbox("Template:", list(presets.keys()))
-        
-        # Load saved template if available
-        saved_email = getattr(st.session_state, 'saved_email_template', None)
-        if saved_email:
-            template_content = saved_email.get('content', presets[selected_preset])
-        else:
-            template_content = presets[selected_preset]
-        
-        # Email template editor
-        email_content = st_quill(
-            value=template_content,
-            placeholder="Type your email template here...",
-            key="email_template_quill"
-        )
-        
-        # Variable insertion helper
-        create_variable_helper("email")
-        
-        if email_content and email_content.strip():
-            st.session_state.current_email_template = {
-                'content': email_content,
-                'from_email': from_email,
-                'subject': subject
-            }
-            
-            # Save template button
-            if st.button("💾 Save Template", key="save_email_template"):
-                save_email_template()
-    else:
-        st.info("Complete settings above first")
+        # Save template button
+        if st.button("� Save Template", key="save_email_template"):
+            save_email_template()
 
 
-def pdf_content_tab():
-    """PDF Content Tab: Send buttons at top, PDF template editor, and sample download"""
-    
-    # Check if setup is complete (simplified check)
-    if (st.session_state.excel_data is None or 
-        not hasattr(st.session_state, 'email_settings') or
-        not hasattr(st.session_state, 'current_email_template')):
-        st.info("Complete Email Content tab first")
-        return
-    
-    # Send Buttons at the top
-    st.header("📧 Send Emails")
-    
-    df = st.session_state.excel_data
-    template = st.session_state.current_email_template
-    
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        if st.button("🧪 Test Email", type="secondary"):
-            execute_mail_merge(df.head(1), template, "Test Mode", 1)
-    
-    with col2:
-        if st.button("🚀 Send All Emails", type="primary"):
-            # Add confirmation
-            if st.session_state.get('confirm_send_all', False):
-                execute_mail_merge(df, template, "Live Mode", 3)
-                st.session_state.confirm_send_all = False
-            else:
-                st.session_state.confirm_send_all = True
-                st.warning("Click again to confirm")
-                st.rerun()
-    
-    # Results section (simplified)
-    if st.session_state.sent_emails:
-        sent_df = pd.DataFrame(st.session_state.sent_emails)
-        
-        # Simple metrics in one row
-        col1, col2, col3, col4 = st.columns(4)
-        with col1:
-            st.metric("Total", len(sent_df))
-        with col2:
-            successful = len(sent_df[sent_df['status'] == 'Success'])
-            st.metric("Success", successful)
-        with col3:
-            failed = len(sent_df[sent_df['status'] == 'Failed'])
-            st.metric("Failed", failed)
-        with col4:
-            if st.button("🗑️ Clear", key="clear_results"):
-                st.session_state.sent_emails = []
-                st.rerun()
-    
-    # PDF Template Editor
-    st.header("📄 PDF Template")
+def pdf_template_subtab():
+    """PDF Template subtab content"""
     
     # Check for letterhead
     if CLOUD_DEPLOYMENT:
@@ -406,9 +428,6 @@ NSNA Treasurer"""
             placeholder="Create your PDF receipt content here...",
             key="pdf_content_quill"
         )
-        
-        # Variable insertion helper
-        create_variable_helper("pdf")
         
         if pdf_content and pdf_content.strip():
             st.session_state.current_pdf_template = {
@@ -464,49 +483,6 @@ def save_pdf_template():
     except Exception as e:
         st.error(f"❌ Failed to save PDF template: {e}")
         return False
-
-def create_variable_helper(template_type):
-    """Create variable insertion helper"""
-    with st.expander("🎯 Insert Variables", expanded=False):
-        st.info("💡 Tip: Click any button below to add the variable to your clipboard area, then copy and paste into the editor above.")
-        
-        # Create a text area to show the inserted variables
-        if f'inserted_{template_type}_variables' not in st.session_state:
-            st.session_state[f'inserted_{template_type}_variables'] = ""
-        
-        available_vars = list(st.session_state.excel_data.columns) if st.session_state.excel_data is not None else []
-        if available_vars:
-            st.write("**From your Excel file:**")
-            cols = st.columns(4)
-            for i, var in enumerate(available_vars):
-                with cols[i % 4]:
-                    if st.button(f"Copy {{{var}}}", key=f"{template_type}_var_{i}", help=f"Copy {{{var}}} to clipboard area"):
-                        st.session_state[f'inserted_{template_type}_variables'] += f" {{{var}}}"
-                        st.success(f"Added {{{var}}} to clipboard area below!")
-        
-        st.write("**Additional variables:**")
-        cols = st.columns(4)
-        additional_vars = ["Date", "Year", "Amount"]
-        for i, var in enumerate(additional_vars):
-            with cols[i % 4]:
-                if st.button(f"Copy {{{var}}}", key=f"{template_type}_additional_{i}", help=f"Copy {{{var}}} to clipboard area"):
-                    st.session_state[f'inserted_{template_type}_variables'] += f" {{{var}}}"
-                    st.success(f"Added {{{var}}} to clipboard area below!")
-        
-        # Show the accumulated variables for easy copying
-        if st.session_state[f'inserted_{template_type}_variables']:
-            st.write("**� Variables and Text to Copy:**")
-            st.text_area(
-                "Copy this content to your template editor above:",
-                value=st.session_state[f'inserted_{template_type}_variables'],
-                height=100,
-                key=f"{template_type}_clipboard",
-                help="Select all text (Ctrl+A) and copy (Ctrl+C), then paste into the rich text editor above"
-            )
-            if st.button("�️ Clear Clipboard", key=f"clear_{template_type}_clipboard"):
-                st.session_state[f'inserted_{template_type}_variables'] = ""
-                st.success("Clipboard cleared!")
-                st.rerun()
 
 def generate_sample_pdf(pdf_content, letterhead_path):
     """Generate a sample PDF for preview"""
