@@ -1,88 +1,108 @@
-# NSNA Mail Merge Tool
+# NSNA Mail Merge Tool - Desktop Storage Edition
 
-Enhanced mail merge application for NSNA Atlanta with modern UI and rich text template editing.
+Enhanced mail merge application for NSNA Atlanta with modern web interface and desktop persistent storage.
 
-## Features
+## 🌟 Key Features
 
-- **Rich Text PDF Template Editor**: Create styled PDF templates with formatting toolbar
-- **Variable Insertion**: Easy insertion of Excel field variables (First Name, Last Name, etc.)
-- **Live Preview**: Real-time preview of templates with sample data
-- **Email Configuration**: Customizable email templates and settings
-- **Excel Integration**: Import donor data and track email status
-- **PDF Generation**: Generate personalized receipts with attachments
-- **Modern UI**: Clean, tabbed interface with color-coded buttons and status indicators
-- **OAuth Authentication**: Secure Google OAuth 2.0 support for SMTP authentication
-- **Dynamic User OAuth**: Each user can send emails using their own Google account
+- **Desktop Persistent Storage**: All files saved directly to your desktop for easy access
+- **Rich Text Email Templates**: Create styled email templates with formatting
+- **PDF Receipt Generation**: Generate personalized PDF receipts with letterhead
+- **Excel Integration**: Import donor data and track email delivery status
+- **OAuth Authentication**: Secure Google OAuth 2.0 for email sending
+- **Modern Web Interface**: Clean, responsive Streamlit web application
+- **Docker Ready**: Containerized deployment with volume mounting
+- **Cross-Platform**: Works on Windows, macOS, and Linux
 
-## Installation
+## 🚀 Quick Start
 
-1. **Install Dependencies**:
-   ```bash
-   pip install -r requirements.txt
-   ```
+### Option 1: Easy Startup (Recommended)
 
-2. **Verify Installation**:
-   ```bash
-   python3 test_implementation.py
-   ```
-
-## How to Run the Application
-
-### Method 1: Using the Launcher Script (Recommended)
+**Windows:**
 ```bash
-python3 run_app.py
+# Double-click or run in Command Prompt
+start_desktop_version.bat
 ```
 
-### Method 2: Direct Execution
+**Linux/macOS:**
 ```bash
-cd src
-python3 app.py
+./start_desktop_version.sh
 ```
 
-### Method 3: From Python
-```python
-from src.app import main
-main()
+### Option 2: Manual Docker Compose
+```bash
+docker-compose up --build
 ```
 
-## Usage Guide
+### Option 3: Local Development
+```bash
+pip install -r requirements.txt
+streamlit run streamlit_app.py
+```
 
-### 1. **Email Settings Tab**
-- Enter your "From Email" address
-- Select or create an Excel file with donor data
-- Configure receipt storage location
-- Use "Send Test Email" to test configuration
+## 📁 Desktop Storage
 
-### 2. **Email Template Tab**
-- Customize email subject, greeting, body, and signature
-- Save template settings for reuse
+The application automatically creates a folder structure on your desktop:
 
-### 3. **PDF Template Tab**
-Choose between two editing modes:
+```
+Desktop/
+└── NSNA_Mail_Merge/
+    ├── data/           # Your uploaded Excel files
+    ├── templates/      # Saved email and PDF templates  
+    ├── receipts/       # Generated PDF receipts
+    └── exports/        # Exported data files
+```
 
-#### Rich Text Editor:
-- Use formatting toolbar (Bold, Italic, Underline, Font Size)
-- Insert variables using dropdown menu
-- View live preview with sample data
-- Save rich template settings
+### Benefits:
+- ✅ **No data loss** - Files persist across container restarts
+- ✅ **Easy access** - All files directly on your desktop
+- ✅ **Simple backup** - Just copy the NSNA_Mail_Merge folder
+- ✅ **Portable** - Move folder between computers
 
-#### Form Fields:
-- Traditional form-based editing
-- Configure all template sections
-- Compatible with existing templates
+## 📋 Usage Guide
 
-## Required Excel Columns
+### 1. **Initial Setup**
+1. Start the application using one of the startup methods above
+2. Check your desktop for the new `NSNA_Mail_Merge` folder
+3. Open your browser to `http://localhost:8501`
 
-Your Excel file must contain these columns:
-- `First Name`
-- `Last Name` 
-- `Email`
-- `Donation Amount`
+### 2. **Upload Data**
+- Upload Excel files with donor information
+- Files are automatically saved to `Desktop/NSNA_Mail_Merge/data/`
+- Use the dropdown to load previously uploaded files
+- Required columns: `First Name`, `Last Name`, `Email`, `Donation Amount`
 
-Optional columns:
-- `Email Status` (tracks sent/failed status)
+### 3. **Email Settings**
+- Enter your Gmail address in "From Email"
+- Set your email subject line
+- Settings are automatically saved for next time
 
-## Configuration
+### 4. **Create Templates**
+
+#### Email Template:
+- Use the compact, Word-like rich text editor to create your email
+- **Formatting Tools**: Bold, italic, underline, lists, headers, alignment, links
+- **Variables**: Insert `{First Name}`, `{Last Name}`, `{Donation Amount}` and other data fields
+- **Professional Interface**: Embedded toolbar with small, Word-style buttons
+- Templates are automatically saved to desktop storage
+
+#### PDF Template:
+- Create receipt content using the same rich text editor
+- **NSNA Letterhead**: Uses official letterhead automatically as background
+- **Formatting Preserved**: HTML formatting is converted to styled PDF text
+- **Sample Generation**: Generate sample PDFs to preview final formatting
+
+### 5. **Send Emails**
+- **Test Email**: Send to yourself first to verify formatting
+- **Send All**: Send personalized emails to all recipients
+- **Results**: View success/failure status for each email
+
+### 6. **Access Your Files**
+All generated files are saved to your desktop:
+- **Excel Files**: `Desktop/NSNA_Mail_Merge/data/`
+- **Templates**: `Desktop/NSNA_Mail_Merge/templates/`
+- **PDF Receipts**: `Desktop/NSNA_Mail_Merge/receipts/`
+
+## 🔧 Configuration
 
 The application creates configuration files in `src/config/`:
 - `email_template_settings.json`: Email template configuration

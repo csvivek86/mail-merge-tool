@@ -1,0 +1,34 @@
+version: '3.8'
+
+services:
+  nsna-mail-merge:
+    build: .
+    ports:
+      - "8501:8501"
+    environment:
+      - DOCKER_DEPLOYMENT=true
+    volumes:
+      # Mount user's desktop to the container for persistent storage
+      # Windows: Mount the entire Desktop folder
+      - ${USERPROFILE}/Desktop:/app/desktop_storage
+      # Alternative for Linux/macOS (uncomment if needed):
+      # - ${HOME}/Desktop:/app/desktop_storage
+    restart: unless-stopped
+    container_name: nsna-mail-merge-tool
+
+# For development with hot reload
+  nsna-mail-merge-dev:
+    build: .
+    ports:
+      - "8502:8501"
+    environment:
+      - DOCKER_DEPLOYMENT=true
+    volumes:
+      # Mount user's desktop to the container for persistent storage
+      - ${USERPROFILE}/Desktop:/app/desktop_storage
+      # Mount source code for development
+      - .:/app
+    restart: unless-stopped
+    container_name: nsna-mail-merge-tool-dev
+    profiles:
+      - dev

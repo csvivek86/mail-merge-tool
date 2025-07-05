@@ -49,14 +49,6 @@ gatherUsageStats = true
 # Port where users can connect to the server.
 serverPort = 8501
 
-[theme]
-
-# Remove padding and use wide layout
-base = "light"
-primaryColor = "#FF6B6B"
-backgroundColor = "#FFFFFF"
-secondaryBackgroundColor = "#F0F2F6"
-
 [server]
 
 # List of folders that should not be watched for changes. This
